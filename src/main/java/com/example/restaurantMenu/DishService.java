@@ -1,5 +1,8 @@
 package com.example.restaurantMenu;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,23 +15,49 @@ public class DishService {
     @Autowired
     private DishRepository dishRepository;
 
-    public List<Dish> getAllDishesByPrice(float price){
-        if(price <= 0)
+    @Autowired IngredientRepository ingredientRepository;
+
+    public List<Dish> getAllDishesByPrice(BigDecimal price){
+        if(price.floatValue() <= 0)
         {
             throw new BadInputException("Invalid price");
         }
-        price = Math.round(price * 100) / 100.0f;  // Round to 2 decimal places
+        price = price.setScale(2, RoundingMode.HALF_UP);  // Round to 2 decimal places
 
-        return dishRepository.findByPrice(price);
+        List<Dish> ret = dishRepository.findByPrice(price);
+        System.out.println("dishes: " + ret.toString() + "price: " + price);
+        return ret;
     }
 
-    public Dish editDish(Dish dish){
-        Optional<Dish> found = dishRepository.findById(dish.getId());
+    public List<Dish> getAll()
+    {
+        Iterable<Dish> dishes = dishRepository.findAll();
+        
+        List<Dish> dishList = new ArrayList<>();
+
+        dishes.forEach(dishList::add);
+        return dishList;
+    }
+
+    public Dish editDish(int id, Dish dish){
+        Optional<Dish> found = dishRepository.findById(id);
         Dish dishFound = found.get();
 
         dishFound.setName(dish.getName());
-        dishFound.setPrice(Math.round(dish.getPrice()*100)/100.0f);
+        dishFound.setPrice(dish.getPrice().setScale(2, RoundingMode.HALF_UP));
         dishFound.setWeight(Math.round(dish.getWeight()*100)/100.0f);
+        // dishFound.
+        List<Ingredient> ingredientList = new ArrayList<>();
+        for (Ingredient ingredient : dish.getIngredients()) {
+                Optional<Ingredient> foundIngredient = ingredientRepository.findById(ingredient.getId());
+            if (foundIngredient.isPresent()) {
+                ingredientList.add(foundIngredient.get());
+            } else {
+                throw new BadInputException("Ingredient with ID " + ingredient.getId() + " not found.");
+            }
+        }
+
+        dish.setIngredients(ingredientList);
 
         return dishRepository.save(dishFound);
     }
@@ -38,10 +67,26 @@ public class DishService {
         if(found.size() != 0)
             throw new BadInputException("Name of dish is not unique");
 
-        if(dish.getPrice() <= 0 || dish.getWeight() <= 0)
+        if(dish.getPrice().floatValue() <= 0 || dish.getWeight() <= 0)
         {
             throw new BadInputException("Invalid price or weight of dish.");
         }
+        dish.setPrice(dish.getPrice().setScale(2, RoundingMode.HALF_UP));
+        dish.setWeight(Math.round(dish.getWeight()*100)/100.0f);
+
+        
+        List<Ingredient> ingredientList = new ArrayList<>();
+        for (Ingredient ingredient : dish.getIngredients()) {
+                Optional<Ingredient> foundIngredient = ingredientRepository.findById(ingredient.getId());
+            if (foundIngredient.isPresent()) {
+                ingredientList.add(foundIngredient.get());
+            } else {
+                throw new BadInputException("Ingredient with ID " + ingredient.getId() + " not found.");
+            }
+        }
+
+        dish.setIngredients(ingredientList);
+
         return dishRepository.save(dish);
     }
 

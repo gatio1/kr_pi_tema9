@@ -1,5 +1,6 @@
 package com.example.restaurantMenu;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,24 +28,24 @@ public class MainController {
 	private DishService dishService;
 
 	@GetMapping("/getByPrice")
-	private @ResponseBody List<Dish> getAllDishesByPrice(@RequestParam float price){
-		if(price <= 0){
+	public @ResponseBody List<Dish> getAllDishesByPrice(@RequestParam BigDecimal price){
+		if(price.floatValue() <= 0){
 			throw new BadInputException("Invalid input.");
 		}
 		return dishService.getAllDishesByPrice(price);
 	}
 
 	@PutMapping("/editDish")
-	private @ResponseBody Dish editDish(@RequestParam int dishId, @RequestBody Dish dish){
+	public @ResponseBody Dish editDish(@RequestParam int dishId, @RequestBody Dish dish){
 		if(dish == null || dishId <= 0)
 		{
 			throw new BadInputException("Invalid input.");
 		}
-		return editDish(dishId, dish);
+		return dishService.editDish(dishId, dish);
 	}
 	
 	@PostMapping("/addDish")
-	private @ResponseBody Dish addDish(@RequestBody Dish dish){
+	public @ResponseBody Dish addDish(@RequestBody Dish dish){
 		if(dish == null)
 		{
 			throw new BadInputException("Invalid input.");
@@ -52,8 +53,14 @@ public class MainController {
 		return dishService.addDish(dish);
 	}
 
-	@DeleteMapping("delDish")
-	private @ResponseBody String delDish(@RequestParam int dishId){
+	@GetMapping("/getAll")
+	public @ResponseBody List<Dish> getAll()
+	{
+		return dishService.getAll();
+	} 
+
+	@DeleteMapping("/delDish")
+	public @ResponseBody String delDish(@RequestParam int dishId){
 		dishService.deleteDish(dishId);
 
 		return("Success");
